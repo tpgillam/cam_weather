@@ -90,7 +90,7 @@ function summarise(frame::AbstractDataFrame)::DataFrame
 end
 
 # The date range to process. End points are inclusive.
-t_start = Date(2020, 1, 1)
+t_start = Date(2017, 1, 1)
 t_end = Date(2021, 6, 19)
 
 # Get one dataframe for the range specified above. This will put the data from all files
