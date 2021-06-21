@@ -17,9 +17,9 @@ const COLUMNS = [
     "Pressure / mBar",
     "Wind speed / knots",  # Mean?
     "Wind direction",
-    "Sun / hours",
-    "Rain / mm",
-    "Start",  # ???
+    "Sun / hours",  # Cumulative, resets daily
+    "Rain / mm",  # Cumulative, resets daily (? though some data looks suspicious)
+    "Start",  # ? This looks like the time of day from which e.g. 'rain' & 'sun' are measured.
     "Max Wind Speed / knots",
 ]
 
@@ -89,10 +89,16 @@ function summarise(frame::AbstractDataFrame)::DataFrame
     return summaries |> DataFrame
 end
 
+# The date range to process. End points are inclusive.
+t_start = Date(2020, 1, 1)
+t_end = Date(2021, 6, 19)
 
-frame = get_frame(Date(2020, 1, 1):Day(1):Date(2021, 6, 19))
+# Get one dataframe for the range specified above. This will put the data from all files
+# into a single dataframe.
+frame = get_frame(t_start:Day(1):t_end)
 
-plotlyjs()
+# Plot a long timeseries of all data we've processed above.
+plotlyjs()  # Allow interactivity.
 Plots.plot(
     frame[!, :DateTime],
     # frame[!, "Rain / mm"];
@@ -102,9 +108,10 @@ Plots.plot(
     ticks=:native
 )
 
-
+# Aggregate the data into one row per day, keeping some small amount of information.
 summary_frame = summarise(frame)
 
+# Make a few plots of the summary data.
 @df summary_frame Plots.plot(
     :date,
     [:humidity_min :humidity_mean :humidity_max];
@@ -132,4 +139,5 @@ Plots.savefig("temperature.png")
 )
 Plots.savefig("pressure.png")
 
+# Output the summary frame to disk (should be usable by a spreadsheet!)
 summary_frame |> CSV.write("summary.csv")
