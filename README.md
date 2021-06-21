@@ -1,3 +1,5 @@
+# Cambridge weather historical summary
+
 Source: https://www.cl.cam.ac.uk/research/dtg/weather/index-daily-text.html
 
 1. Download history of weather data (`weather.tar.gz`) from source above.
@@ -12,3 +14,13 @@ everything:
 julia> using Pkg; Pkg.instantiate()
 julia> include("munge.jl")
 ```
+
+You'll then get some images (as below), plus a [summary CSV file](summary.csv).
+
+## Output
+![Temperature](temperature.png)
+![Pressure](pressure.png)
+![Humidity](humidity.png)
+
+## TODO
+Allow incremental updates from the website!
