@@ -1,36 +1,26 @@
 # Munge the MET office data, downloaded from:
 #   https://www.metoffice.gov.uk/pub/data/weather/uk/climate/stationdata/cambridgedata.txt
 
-using CSV
 using DataFrames
+using Measures
+using MetOfficeStationData
 using Plots
 
-_parse_value(::Missing) = missing
-_parse_value(x::Number) = x
-_parse_value(x::AbstractString) = parse(Float64, replace(x, "*" => ""))
+short_name = "cambridge"
+# short_name = "oxford"
 
-frame = CSV.read(
-    "cambridgedata_20231209.txt",
-    DataFrame;
-    header=[6],
-    skipto=8,
-    delim=' ',
-    ignorerepeated=true,
-)
-frame = ifelse.(isequal.(frame, "---"), missing, frame)
-# insertcols!(frame, 1, :date => Date.(frame[!, :yyyy], frame[!, :mm]))
-# select!(frame, Not([:yyyy, :mm]))
-select!(frame, Not([:Column8]))
+metadata = MetOfficeStationData.get_station_metadata()
+# display(metadata)
 
-for col in Tables.columnnames(frame)[2:end]
-    frame[!, col] .= _parse_value.(frame[!, col])
-end
+display_name = only(eachrow(filter(:short_name => ==(short_name), metadata)))[:name]
 
-begin
+frame = MetOfficeStationData.get_frame(short_name)
+
+p1 = begin
     plot(;
         xlabel="Month",
         ylabel="Cumulative rainfall / mm",
-        title="Cambridge NIAB",
+        title=display_name,
         legend=:topleft,
     )
     g = groupby(frame, :yyyy; sort=true)
@@ -57,8 +47,6 @@ begin
         plot!(
             vcat([0], df[!, :mm]),
             vcat([0], cumsum(df[!, :rain]));
-            # df[!, :mm],
-            # df[!, :tmax];
             lw,
             ls,
             c,
@@ -70,3 +58,18 @@ begin
     end
     Plots.current()
 end
+
+yearly_rain = dropmissing(combine(groupby(frame, :yyyy), :rain => sum => :rain))
+display(first(sort(yearly_rain, :rain; rev=true), 5))
+
+p2 = plot(
+    yearly_rain[!, :yyyy],
+    yearly_rain[!, :rain];
+    xlabel="Year",
+    ylabel="Annual rainfall / mm",
+    title=display_name,
+    legend=nothing,
+)
+
+display(plot(p1, p2; size=(800, 400), margin=3mm))
+
